@@ -1,0 +1,47 @@
+In order to develop this CryptoSystem, I applied different maths concepts that you should now before exploring the code.
+
+-> Euclid's Algorithm:
+The Elements of Euclid (circa 300 B.C.) describes the following gcd algorithm,
+although it may be of even earlier origin. We express Euclid’s algorithm as a
+recursive program based directly on Theorem 31.9. The inputs a and b are arbitrary
+nonnegative integers.
+EUCLID(a, b)
+1 if b == 0
+2 return a
+3 else return EUCLID(b, a mod b)
+As an example of the running of EUCLID, consider the computation of gcd(30, 21)
+EUCLID(30,21) = EUCLID(21,9)
+= EUCLID(9, 3)
+= EUCLID(3, 0)
+= 3
+This computation calls EUCLID recursively three times.
+The correctness of EUCLID follows the property that if the algorithm returns a in line 2, then b = 0, so that equation implies that
+gcd(a, b) = gcd(a, 0) = a. The algorithm cannot recurse indefinitely, since the
+second argument strictly decreases in each recursive call and is always nonnegative.
+Therefore, EUCLID always terminates with the correct answer.
+
+-> Fermat's Theorem:
+The passage you provided blends **Fermat's Little Theorem** with group theory concepts and primitive roots, which are central to number theory. 
+Here’s a breakdown of the key points mentioned:
+
+1. **Fermat's Little Theorem**:  
+   For a prime \( p \), the theorem states:
+   \[
+   a^{p-1} \equiv 1 \mod p
+   \]
+   for any \( a \in \mathbb{Z}_p^* \) (the set of integers modulo \( p \) excluding \( 0 \)). This is fundamental in modular arithmetic.
+
+2. **Primitive Roots and Cyclic Groups**:  
+   If \( g \) is a **primitive root modulo \( n \)**, it means \( g \) is a generator of the multiplicative group \( \mathbb{Z}_n^* \). Specifically:
+   - \( g \) can produce all elements of \( \mathbb{Z}_n^* \) when raised to successive powers.
+   - This group is **cyclic**, meaning all elements are powers of \( g \).
+
+   For example:
+   - Modulo 7, 3 is a primitive root because \( \{3^1, 3^2, 3^3, \dots \} \mod 7 \) cycles through all nonzero elements of \( \mathbb{Z}_7^* = \{1, 2, 3, 4, 5, 6\}\).
+   - Modulo 7, 2 is **not** a primitive root because its powers don't generate all nonzero residues.
+
+3. **General Structure of \( \mathbb{Z}_n^* \)**:  
+   The group \( \mathbb{Z}_n^* \) is cyclic for some \( n \), like primes \( p \), but not for all integers \( n \). This is tied to whether primitive roots exist for \( n \).
+
+The reference to **Niven and Zuckerman** suggests these details are drawn from their classic number theory text, *An Introduction to the Theory of Numbers*. Would you like a detailed explanation of primitive roots or more on Fermat's Little Theorem?
+
