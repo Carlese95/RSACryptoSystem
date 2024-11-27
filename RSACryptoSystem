@@ -1,0 +1,123 @@
+import random # Used to generate random numbers
+from math import gcd # GreatCommonDivisor
+
+
+# Function to compute the modular multiplicative inverse, with which you can d in order to do a * d ≡ mod m
+def modular_inverse(a, m):  # We are using Euclid's Algorithm in order to resolve a*x + m*y = GCD(a,m)
+    m0, x0, x1 = m, 0, 1
+    while a > 1:
+        q = a // m
+        a, m = m, a % m
+        x0, x1 = x1 - q * x0, x0
+    if x1 < 0:
+        x1 += m0
+    return x1
+
+
+# Function to generate a large prime number
+def generate_large_prime(bits=512):
+    while True:
+        num = random.getrandbits(bits)
+        if is_prime(num):
+            return num
+
+
+# Primality test using Fermat's Theorem (if a^n-1 mod n != 1 -> Not primal)
+def is_prime(num, tests=5):
+    if num <= 1:
+        return False
+    if num <= 3:
+        return True
+    if num % 2 == 0:
+        return False
+    for _ in range(tests): # Doing some tryes in order to reduce the chance of a false positive
+        a = random.randint(2, num - 2)
+        if pow(a, num - 1, num) != 1:
+            return False
+    return True
+
+
+# RSA key generation
+def generate_keys():
+    # Generate two distinct primes p and q
+    p = generate_large_prime()
+    q = generate_large_prime()
+    while p == q:  # Ensure p ≠ q
+        q = generate_large_prime()
+
+    # Compute n = p * q and φ(n) = (p-1)(q-1)
+    n = p * q
+    phi_n = (p - 1) * (q - 1)
+
+    # Select e such that 1 < e < φ(n) and gcd(e, φ(n)) = 1
+    e = 65537  # Commonly used value for e
+    if gcd(e, phi_n) != 1:
+        for i in range(3, phi_n, 2):
+            if gcd(i, phi_n) == 1:
+                e = i
+                break
+
+    # Compute d, the modular multiplicative inverse of e mod φ(n)
+    d = modular_inverse(e, phi_n)
+
+    # Return public and private keys
+    return (e, n), (d, n)
+
+
+# Encrypt a message using the public key
+def encrypt_message(message, public_key):
+    e, n = public_key
+    message_int = int.from_bytes(message.encode('utf-8'), byteorder='big')  # Convert message to integer, we use the UTF-8 codification
+    if message_int >= n:
+        raise ValueError("Message too large for the key size.")
+    ciphertext = pow(message_int, e, n)  # C = M^e mod n
+    return ciphertext
+
+
+# Decrypt a message using the private key
+def decrypt_message(ciphertext, private_key):
+    d, n = private_key
+    message_int = pow(ciphertext, d, n)  # M = C^d mod n
+    # Convert integer back to string
+    message = message_int.to_bytes((message_int.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
+    return message
+
+
+# Main application
+if __name__ == "__main__":
+    # Step 1: Generate RSA keys
+    print("Generating RSA keys...")
+    public_key, private_key = generate_keys()
+    print("Public Key (e, n):", public_key)
+    print("Private Key (d, n):", private_key)
+
+    while True:
+        print("\nChoose an option:")
+        print("1. Encrypt a message")
+        print("2. Decrypt a message")
+        print("3. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            # Encrypt a message
+            plaintext = input("Enter the plaintext message to encrypt: ")
+            ciphertext = encrypt_message(plaintext, public_key)
+            print("Encrypted Message:", ciphertext)
+
+        elif choice == "2":
+            # Decrypt a message
+            encrypted_input = input("Enter the encrypted message (integer): ")
+            try:
+                ciphertext = int(encrypted_input)
+                decrypted_message = decrypt_message(ciphertext, private_key)
+                print("Decrypted Message:", decrypted_message)
+            except ValueError as e:
+                print("Error during decryption:", str(e))
+
+        elif choice == "3":
+            print("Exiting the application.")
+            break
+
+        else:
+            print("Invalid choice. Please select 1, 2, or 3.")
