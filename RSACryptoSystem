@@ -1,123 +1,151 @@
-import random # Used to generate random numbers
-from math import gcd # GreatCommonDivisor
+import random
+from sympy import isprime
 
 
-# Function to compute the modular multiplicative inverse, with which you can d in order to do a * d ≡ mod m
-def modular_inverse(a, m):  # We are using Euclid's Algorithm in order to resolve a*x + m*y = GCD(a,m)
-    m0, x0, x1 = m, 0, 1
-    while a > 1:
-        q = a // m
-        a, m = m, a % m
-        x0, x1 = x1 - q * x0, x0
-    if x1 < 0:
-        x1 += m0
-    return x1
+# Step 1: Recursive implementation of the Extended Euclid's Algorithm
+def gcd_extended(a, b):
+    """
+    Recursive function to compute the gcd and coefficients x, y of
+    the equation a * x + b * y = gcd(a, b).
+    """
+    if b == 0:
+        return a, 1, 0
+    else:
+        gcd, x1, y1 = gcd_extended(b, a % b)
+        x = y1
+        y = x1 - (a // b) * y1
+        return gcd, x, y
 
 
-# Function to generate a large prime number
-def generate_large_prime(bits=512):
+def modular_inverse(a, m):
+    """
+    Computes the modular inverse of a mod m using the Extended Euclid's Algorithm.
+    Returns x such that (a * x) % m == 1.
+    """
+    gcd, x, _ = gcd_extended(a, m)
+    if gcd != 1:
+        raise ValueError(f"No modular inverse exists for a = {a} and m = {m}")
+    return x % m
+
+
+# Step 2: Function to generate a large prime number
+def generate_large_prime(bits=1024):
+    """
+    Generates a large random prime number of the specified bit size.
+    """
     while True:
         num = random.getrandbits(bits)
-        if is_prime(num):
+        if isprime(num):
             return num
 
 
-# Primality test using Fermat's Theorem (if a^n-1 mod n != 1 -> Not primal)
-def is_prime(num, tests=5):
-    if num <= 1:
-        return False
-    if num <= 3:
-        return True
-    if num % 2 == 0:
-        return False
-    for _ in range(tests): # Doing some tryes in order to reduce the chance of a false positive
-        a = random.randint(2, num - 2)
-        if pow(a, num - 1, num) != 1:
-            return False
-    return True
+# Step 3: RSA Key Generation
+def generate_keys(bits=1024):
+    """
+    Generate RSA public and private keys.
+    """
+    # Generate two distinct large primes p and q
+    p = generate_large_prime(bits)
+    q = generate_large_prime(bits)
+    while p == q:  # Ensure p != q
+        q = generate_large_prime(bits)
 
-
-# RSA key generation
-def generate_keys():
-    # Generate two distinct primes p and q
-    p = generate_large_prime()
-    q = generate_large_prime()
-    while p == q:  # Ensure p ≠ q
-        q = generate_large_prime()
-
-    # Compute n = p * q and φ(n) = (p-1)(q-1)
+    # Compute n = p * q
     n = p * q
+
+    # Compute φ(n) = (p - 1) * (q - 1)
     phi_n = (p - 1) * (q - 1)
 
-    # Select e such that 1 < e < φ(n) and gcd(e, φ(n)) = 1
-    e = 65537  # Commonly used value for e
-    if gcd(e, phi_n) != 1:
-        for i in range(3, phi_n, 2):
-            if gcd(i, phi_n) == 1:
-                e = i
+    # Select e such that gcd(e, φ(n)) = 1
+    e = 65537  # Common choice for e
+    gcd, _, _ = gcd_extended(e, phi_n)
+    if gcd != 1:
+        # If 65537 is not suitable, find another e
+        for candidate in range(3, phi_n, 2):
+            if gcd_extended(candidate, phi_n)[0] == 1:
+                e = candidate
                 break
 
-    # Compute d, the modular multiplicative inverse of e mod φ(n)
+    # Compute d, the modular inverse of e mod φ(n)
     d = modular_inverse(e, phi_n)
 
-    # Return public and private keys
-    return (e, n), (d, n)
+    # Public and private keys
+    public_key = (e, n)
+    private_key = (d, n)
+
+    return public_key, private_key
 
 
-# Encrypt a message using the public key
-def encrypt_message(message, public_key):
+# Step 4: RSA Encryption
+def encrypt(message, public_key):
+    """
+    Encrypts a message using the RSA public key.
+    """
     e, n = public_key
-    message_int = int.from_bytes(message.encode('utf-8'), byteorder='big')  # Convert message to integer, we use the UTF-8 codification
+    # Convert the message to an integer
+    message_int = int.from_bytes(message.encode('utf-8'), byteorder='big')
     if message_int >= n:
         raise ValueError("Message too large for the key size.")
-    ciphertext = pow(message_int, e, n)  # C = M^e mod n
+    # Encrypt the message: C = M^e mod n
+    ciphertext = pow(message_int, e, n)
     return ciphertext
 
 
-# Decrypt a message using the private key
-def decrypt_message(ciphertext, private_key):
+# Step 5: RSA Decryption
+def decrypt(ciphertext, private_key):
+    """
+    Decrypts a ciphertext using the RSA private key.
+    """
     d, n = private_key
-    message_int = pow(ciphertext, d, n)  # M = C^d mod n
-    # Convert integer back to string
+    # Decrypt the ciphertext: M = C^d mod n
+    message_int = pow(ciphertext, d, n)
+    # Convert the integer back to a string
     message = message_int.to_bytes((message_int.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
     return message
 
 
-# Main application
-if __name__ == "__main__":
-    # Step 1: Generate RSA keys
+# Step 6: Menu Interface
+def main():
     print("Generating RSA keys...")
-    public_key, private_key = generate_keys()
-    print("Public Key (e, n):", public_key)
-    print("Private Key (d, n):", private_key)
+    public_key, private_key = generate_keys(bits=512)  # Smaller bit size for demonstration
+    print("Keys generated successfully!")
+    print("\nPublic Key:", public_key)
+    print("Private Key:", private_key)
 
     while True:
-        print("\nChoose an option:")
+        print("\nMenu:")
         print("1. Encrypt a message")
         print("2. Decrypt a message")
         print("3. Exit")
-
-        choice = input("Enter your choice: ")
+        choice = input("Choose an option: ")
 
         if choice == "1":
             # Encrypt a message
-            plaintext = input("Enter the plaintext message to encrypt: ")
-            ciphertext = encrypt_message(plaintext, public_key)
-            print("Encrypted Message:", ciphertext)
+            message = input("\nEnter the message to encrypt: ")
+            try:
+                ciphertext = encrypt(message, public_key)
+                print("\nEncrypted Message (Ciphertext):", ciphertext)
+            except ValueError as e:
+                print("\nError:", e)
 
         elif choice == "2":
             # Decrypt a message
-            encrypted_input = input("Enter the encrypted message (integer): ")
             try:
-                ciphertext = int(encrypted_input)
-                decrypted_message = decrypt_message(ciphertext, private_key)
-                print("Decrypted Message:", decrypted_message)
+                ciphertext = int(input("\nEnter the ciphertext to decrypt: "))
+                decrypted_message = decrypt(ciphertext, private_key)
+                print("\nDecrypted Message:", decrypted_message)
             except ValueError as e:
-                print("Error during decryption:", str(e))
+                print("\nError:", e)
 
         elif choice == "3":
-            print("Exiting the application.")
+            # Exit
+            print("\nExiting program. Goodbye!")
             break
 
         else:
-            print("Invalid choice. Please select 1, 2, or 3.")
+            print("\nInvalid choice. Please try again.")
+
+
+# Run the program
+if __name__ == "__main__":
+    main()
