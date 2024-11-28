@@ -1,7 +1,6 @@
 import random
 from sympy import isprime
 
-
 # Step 1: Recursive implementation of the Extended Euclid's Algorithm
 def gcd_extended(a, b):
     """
@@ -16,7 +15,6 @@ def gcd_extended(a, b):
         y = x1 - (a // b) * y1
         return gcd, x, y
 
-
 def modular_inverse(a, m):
     """
     Computes the modular inverse of a mod m using the Extended Euclid's Algorithm.
@@ -27,7 +25,6 @@ def modular_inverse(a, m):
         raise ValueError(f"No modular inverse exists for a = {a} and m = {m}")
     return x % m
 
-
 # Step 2: Function to generate a large prime number
 def generate_large_prime(bits=1024):
     """
@@ -37,7 +34,6 @@ def generate_large_prime(bits=1024):
         num = random.getrandbits(bits)
         if isprime(num):
             return num
-
 
 # Step 3: RSA Key Generation
 def generate_keys(bits=1024):
@@ -75,7 +71,6 @@ def generate_keys(bits=1024):
 
     return public_key, private_key
 
-
 # Step 4: RSA Encryption
 def encrypt(message, public_key):
     """
@@ -90,7 +85,6 @@ def encrypt(message, public_key):
     ciphertext = pow(message_int, e, n)
     return ciphertext
 
-
 # Step 5: RSA Decryption
 def decrypt(ciphertext, private_key):
     """
@@ -102,7 +96,6 @@ def decrypt(ciphertext, private_key):
     # Convert the integer back to a string
     message = message_int.to_bytes((message_int.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
     return message
-
 
 # Step 6: Menu Interface
 def main():
@@ -144,7 +137,6 @@ def main():
 
         else:
             print("\nInvalid choice. Please try again.")
-
 
 
 # Run the program
